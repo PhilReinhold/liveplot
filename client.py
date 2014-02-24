@@ -1,17 +1,21 @@
 import json
 import warnings
-from PyQt4 import QtNetwork
+from PyQt4 import QtCore, QtNetwork
 import numpy as np
+import logging
 
 __author__ = 'phil'
 
+logging.root.setLevel(logging.DEBUG)
 
 class LivePlotClient(QtNetwork.QLocalSocket):
     def __init__(self):
+        self.app = QtCore.QCoreApplication([])
         super(LivePlotClient, self).__init__()
         self.connectToServer("LivePlotter")
         if not self.waitForConnected(1000):
             raise EnvironmentError("Couldn't find LivePlotter instance")
+        logging.debug('connected to %s', self.fullServerName())
         self.disconnected.connect(self.disconnect_received)
         self.is_connected = True
 
