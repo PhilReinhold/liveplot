@@ -129,6 +129,18 @@ class CrossSectionDock(CloseableDock):
         self.search_mode = False
         self.signals_connected = False
         self.set_histogram(False)
+        histogram_action = QtGui.QAction('Histogram', self)
+        histogram_action.setCheckable(True)
+        histogram_action.triggered.connect(self.set_histogram)
+        self.img_view.scene.contextMenu.append(histogram_action)
+
+        self.autolevels_action = QtGui.QAction('Autoscale Levels', self)
+        self.autolevels_action.setCheckable(True)
+        self.autolevels_action.setChecked(True)
+        self.autolevels_action.triggered.connect(self.redraw)
+        self.ui.histogram.item.sigLevelChangeFinished.connect(lambda: self.autolevels_action.setChecked(False))
+        self.img_view.scene.contextMenu.append(self.autolevels_action)
+
         self.ui.histogram.gradient.loadPreset('thermal')
         try:
             self.connect_signal()
@@ -166,8 +178,15 @@ class CrossSectionDock(CloseableDock):
         else:
             self._xscale, self._yscale = 1, 1
 
+        autorange = self.img_view.getView().vb.autoRangeEnabled()[0]
+        kwargs['autoRange'] = autorange
         self.img_view.setImage(*args, **kwargs)
+        self.img_view.getView().vb.enableAutoRange(enable=autorange)
+
         self.update_cross_section()
+
+    def redraw(self):
+        self.setImage(self.img_view.imageItem.image)
 
     def toggle_cross_section(self):
         if self.cross_section_enabled:

@@ -30,14 +30,19 @@ plotting are supported, including cumulative, parametric, and 2D.
 
 GUI Features
 ------------
+In addition to the many wonderful features of native pyqtgraph widgets we have,
+
 - Double click on plots to bring up cross-hair marker
 - Cross-hair displays cross-section cuts for image plots
 - Restore closed plots by double-clicking the name in the plot list
+- Right click on image plots
+  - toggle histogram & levels scale
+  - enable/disable auto-rescaling of levels when image is updated
 
 To Do
 -----
 - Appending method for image plots
 - Record history with updating plot
-- Context menu for toggling cross-hairs, image histogram
+- Context menu for toggling cross-hairs
 - Keep plots hidden while updating
 - Permanently delete plots
