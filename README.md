@@ -1,7 +1,7 @@
 liveplot.py
 ===========
 
-![](http://github.com/PhilReinhold/liveplot/master/screenshot.png)
+![](https://raw.github.com/PhilReinhold/liveplot/master/screenshot.png)
 
 Requirements
 ------------
