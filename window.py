@@ -84,7 +84,12 @@ class MainWindow(QtGui.QMainWindow):
         elif operation == 'plot_xy':
             pw.plot(arr[0], arr[1], parametric=True)
         elif operation == 'plot_z':
-            pw.setImage(arr)
+            start_step = meta['start_step']
+            if start_step is not None:
+                (x0, dx), (y0, dy) = start_step
+                pw.setImage(arr, pos=(x0, y0), scale=(dx, dy))
+            else:
+                pw.setImage(arr)
         elif operation == 'append_y':
             xs, ys = pw.get_data()
             new_ys = list(ys)
@@ -141,7 +146,6 @@ class NameList(QtGui.QDockWidget):
         self.plot_dict[name].close()
         del self.plot_dict[name]
 
-
 def main():
     app = QtGui.QApplication([])
     win = MainWindow()
@@ -150,6 +154,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-

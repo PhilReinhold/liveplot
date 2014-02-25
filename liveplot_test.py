@@ -31,8 +31,8 @@ for x, y in zip(xs, ys):
     c.append_xy('spiral out', x, y)
     time.sleep(.05)
 
+xs, ys = np.mgrid[-100:100, -100:100]/20.
+rs = np.sqrt(xs**2 + ys**2)
 for i in range(100):
-    xs, ys = np.mgrid[-100:100, -100:100]/20.
-    rs = np.sqrt(xs**2 + ys**2)
-    c.plot_z('sinc', np.sinc(rs + i/20.))
+    c.plot_z('sinc', np.sinc(rs + i/20.), extent=((-5, 5), (-10, 10)))
     time.sleep(.05)

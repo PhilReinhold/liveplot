@@ -51,14 +51,25 @@ class LivePlotClient(QtNetwork.QLocalSocket):
         }
         self.send_to_plotter(meta, arr)
 
-    def plot_z(self, name, arr):
+    def plot_z(self, name, arr, extent=None, start_step=None):
+        '''
+        extent is ((initial x, final x), (initial y, final y))
+        start_step is ((initial x, delta x), (initial_y, final_y))
+        '''
         arr = np.array(arr)
+        if extent is not None and start_step is not None:
+            raise ValueError('extent and start_step provide the same info and are thus mutually exclusive')
+        if extent is not None:
+            (x0, x1), (y0, y1) = extent
+            nx, ny = arr.shape
+            start_step = (x0, float(x1-x0)/nx), (y0, float(y1-y0)/ny)
         meta = {
             'name': name,
             'dtype': str(arr.dtype),
             'shape': arr.shape,
             'operation':'plot_z',
             'rank': 2,
+            'start_step': start_step,
         }
         self.send_to_plotter(meta, arr)
 
