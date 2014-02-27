@@ -1,6 +1,6 @@
 import logging
 import widgets
-from PyQt4 import QtGui, QtNetwork
+from PyQt4 import QtGui, QtNetwork, QtCore
 from PyQt4.Qt import Qt as QtConst
 from pyqtgraph.dockarea import DockArea
 import numpy as np
@@ -11,6 +11,7 @@ logging.root.setLevel(logging.WARNING)
 class MainWindow(QtGui.QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
+        self.setWindowTitle("Liveplot")
         self.dockarea = DockArea()
         self.setCentralWidget(self.dockarea)
         self.namelist = NameList(self.dockarea)
@@ -110,6 +111,9 @@ class MainWindow(QtGui.QMainWindow):
         self.dockarea.addDock(pw, position=['bottom', 'right'][self.insert_dock_right])
         self.namelist[name] = pw
         return pw
+
+    def sizeHint(self):
+        return QtCore.QSize(1000, 600)
 
 class NameList(QtGui.QDockWidget):
     def __init__(self, dockarea):
