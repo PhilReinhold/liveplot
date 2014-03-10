@@ -10,7 +10,10 @@ logging.root.setLevel(logging.DEBUG)
 
 class LivePlotClient(QtNetwork.QLocalSocket):
     def __init__(self):
-        self.app = QtCore.QCoreApplication([])
+        self.app = QtCore.QCoreApplication.instance()
+        if self.app is None:
+            print 'app not found'
+            self.app = QtCore.QCoreApplication([])
         super(LivePlotClient, self).__init__()
         self.connectToServer("LivePlotter")
         if not self.waitForConnected(1000):
@@ -25,6 +28,8 @@ class LivePlotClient(QtNetwork.QLocalSocket):
         if arr is not None:
             arrbytes = bytearray(arr)
             meta['arrsize'] = len(arrbytes)
+            meta['dtype'] = str(arr.dtype)
+            meta['shape'] = arr.shape
         else:
             meta['arrsize'] = 0
         bytes = bytearray(json.dumps(meta))
@@ -40,13 +45,18 @@ class LivePlotClient(QtNetwork.QLocalSocket):
             self.waitForBytesWritten(1000)
 
 
-    def plot_y(self, name, arr):
+    def plot_y(self, name, arr, extent=None, start_step=None):
         arr = np.array(arr)
+        if extent is not None and start_step is not None:
+            raise ValueError('extent and start_step provide the same info and are thus mutually exclusive')
+        if extent is not None:
+            x0, x1 = extent
+            nx = len(arr)
+            start_step = x0, float(x1 - x0)/nx
         meta = {
             'name': name,
-            'dtype': str(arr.dtype),
-            'shape': arr.shape,
             'operation':'plot_y',
+            'start_step': start_step,
             'rank': 1,
         }
         self.send_to_plotter(meta, arr)
@@ -62,11 +72,9 @@ class LivePlotClient(QtNetwork.QLocalSocket):
         if extent is not None:
             (x0, x1), (y0, y1) = extent
             nx, ny = arr.shape
-            start_step = (x0, float(x1-x0)/nx), (y0, float(y1-y0)/ny)
+            start_step = (x0, float(x1 - x0)/nx), (y0, float(y1 - y0)/ny)
         meta = {
             'name': name,
-            'dtype': str(arr.dtype),
-            'shape': arr.shape,
             'operation':'plot_z',
             'rank': 2,
             'start_step': start_step,
@@ -77,18 +85,17 @@ class LivePlotClient(QtNetwork.QLocalSocket):
         arr = np.array([xs, ys])
         meta = {
             'name': name,
-            'dtype': str(arr.dtype),
-            'shape': arr.shape,
             'operation':'plot_xy',
             'rank': 1,
         }
         self.send_to_plotter(meta, np.array([xs, ys]))
 
-    def append_y(self, name, point):
+    def append_y(self, name, point, start_step=None):
         self.send_to_plotter({
             'name': name,
             'operation':'append_y',
             'value': point,
+            'start_step': start_step,
             'rank': 1,
         })
 
@@ -99,6 +106,17 @@ class LivePlotClient(QtNetwork.QLocalSocket):
             'value': (x, y),
             'rank': 1,
         })
+
+    def append_z(self, name, arr, start_step=None):
+        arr = np.array(arr)
+        meta = {
+            'name': name,
+            'operation':'append_z',
+            'rank': 2,
+            'start_step': start_step,
+            }
+        self.send_to_plotter(meta, arr)
+
 
     def clear(self, name):
         self.send_to_plotter({
