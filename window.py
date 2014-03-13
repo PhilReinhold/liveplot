@@ -62,6 +62,10 @@ class MainWindow(QtGui.QMainWindow):
         self.do_operation(arr)
 
     def do_operation(self, arr=None):
+        
+        def close(name):
+            del self.namelist[name]
+
         meta = self.meta
         operation = meta['operation']
         name = meta['name']
@@ -73,7 +77,8 @@ class MainWindow(QtGui.QMainWindow):
                 self.dockarea.addDock(pw)
 
         else:
-            if operation == 'clear':
+            if operation == 'clear' and name == "*" :
+                map(close, self.namelist.keys())
                 return
             pw = self.add_new_plot(meta['rank'], name)
 
@@ -145,6 +150,9 @@ class NameList(QtGui.QDockWidget):
         self.namelist_model.removeRow(self.namelist_model.findItems(name)[0].index().row())
         self.plot_dict[name].close()
         del self.plot_dict[name]
+
+    def keys(self):
+        return self.plot_dict.keys();
 
 def main():
     app = QtGui.QApplication([])

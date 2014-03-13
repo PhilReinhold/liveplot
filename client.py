@@ -22,6 +22,8 @@ class LivePlotClient(QtNetwork.QLocalSocket):
     def send_to_plotter(self, meta, arr=None):
         if not self.is_connected:
             return
+        if meta["name"] == None:
+            meta["name"] = "*";
         if arr is not None:
             arrbytes = bytearray(arr)
             meta['arrsize'] = len(arrbytes)
@@ -100,7 +102,7 @@ class LivePlotClient(QtNetwork.QLocalSocket):
             'rank': 1,
         })
 
-    def clear(self, name):
+    def clear(self, name=None):
         self.send_to_plotter({
             'name':name,
             'operation':'clear'
