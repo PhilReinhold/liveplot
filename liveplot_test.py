@@ -37,5 +37,6 @@ for i in range(100):
     c.plot_z('sinc', np.sinc(rs + i/20.), extent=((-5, 5), (-10, 10)))
     time.sleep(.05)
 
-#sending clear() to the plotter clears all the open windows and removes them from the list.
-c.clear()
+# c.hide('appending exp')
+# c.remove('appending exp')
+# c.clear()

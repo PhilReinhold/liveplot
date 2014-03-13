@@ -8,6 +8,7 @@ __author__ = 'phil'
 
 logging.root.setLevel(logging.DEBUG)
 
+
 class LivePlotClient(QtNetwork.QLocalSocket):
     def __init__(self):
         self.app = QtCore.QCoreApplication([])
@@ -36,8 +37,8 @@ class LivePlotClient(QtNetwork.QLocalSocket):
         bytes = bytes.ljust(200, '\x00')
         if arr is not None:
             bytes.extend(arrbytes)
-        for n in range(int(np.ceil(len(bytes)/8192.))):
-            interval = bytes[n*8192:min((n+1)*8192, len(bytes))]
+        for n in range(int(np.ceil(len(bytes) / 8192.))):
+            interval = bytes[n * 8192:min((n + 1) * 8192, len(bytes))]
             self.write(interval)
             self.waitForBytesWritten(1000)
 
@@ -48,7 +49,7 @@ class LivePlotClient(QtNetwork.QLocalSocket):
             'name': name,
             'dtype': str(arr.dtype),
             'shape': arr.shape,
-            'operation':'plot_y',
+            'operation': 'plot_y',
             'rank': 1,
         }
         self.send_to_plotter(meta, arr)
@@ -64,12 +65,12 @@ class LivePlotClient(QtNetwork.QLocalSocket):
         if extent is not None:
             (x0, x1), (y0, y1) = extent
             nx, ny = arr.shape
-            start_step = (x0, float(x1-x0)/nx), (y0, float(y1-y0)/ny)
+            start_step = (x0, float(x1 - x0) / nx), (y0, float(y1 - y0) / ny)
         meta = {
             'name': name,
             'dtype': str(arr.dtype),
             'shape': arr.shape,
-            'operation':'plot_z',
+            'operation': 'plot_z',
             'rank': 2,
             'start_step': start_step,
         }
@@ -81,7 +82,7 @@ class LivePlotClient(QtNetwork.QLocalSocket):
             'name': name,
             'dtype': str(arr.dtype),
             'shape': arr.shape,
-            'operation':'plot_xy',
+            'operation': 'plot_xy',
             'rank': 1,
         }
         self.send_to_plotter(meta, np.array([xs, ys]))
@@ -89,7 +90,7 @@ class LivePlotClient(QtNetwork.QLocalSocket):
     def append_y(self, name, point):
         self.send_to_plotter({
             'name': name,
-            'operation':'append_y',
+            'operation': 'append_y',
             'value': point,
             'rank': 1,
         })
@@ -97,15 +98,27 @@ class LivePlotClient(QtNetwork.QLocalSocket):
     def append_xy(self, name, x, y):
         self.send_to_plotter({
             'name': name,
-            'operation':'append_xy',
+            'operation': 'append_xy',
             'value': (x, y),
             'rank': 1,
         })
 
     def clear(self, name=None):
         self.send_to_plotter({
-            'name':name,
-            'operation':'clear'
+            'name': name,
+            'operation': 'clear'
+        })
+
+    def hide(self, name=None):
+        self.send_to_plotter({
+            'name': name,
+            'operation': 'close'
+        })
+
+    def remove(self, name=None):
+        self.send_to_plotter({
+            'name': name,
+            'operation': 'remove'
         })
 
     def disconnect_received(self):

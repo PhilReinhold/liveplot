@@ -8,6 +8,7 @@ import json
 
 logging.root.setLevel(logging.WARNING)
 
+
 class MainWindow(QtGui.QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
@@ -62,8 +63,14 @@ class MainWindow(QtGui.QMainWindow):
         self.do_operation(arr)
 
     def do_operation(self, arr=None):
-        
+
+        def clear(name):
+            self.namelist[name].clear()
+
         def close(name):
+            self.namelist[name].close()
+
+        def remove(name):
             del self.namelist[name]
 
         meta = self.meta
@@ -77,13 +84,25 @@ class MainWindow(QtGui.QMainWindow):
                 self.dockarea.addDock(pw)
 
         else:
-            if operation == 'clear' and name == "*" :
-                map(close, self.namelist.keys())
+            if name != "*" and operation != "remove" and "rank" in meta:
+                pw = self.add_new_plot(meta['rank'], name)
                 return
-            pw = self.add_new_plot(meta['rank'], name)
+
+            if operation == 'clear' and name == "*":
+                map(clear, self.namelist.keys())
+            if operation == 'close' and name == "*":
+                map(close, self.namelist.keys())
+            if operation == 'remove' and name == "*":
+                map(remove, self.namelist.keys())
+            return
 
         if operation == 'clear':
             pw.clear()
+        if operation == 'close':
+            pw.close()
+        if operation == 'remove':
+            del self.namelist[name]
+
         elif operation == 'plot_y':
             pw.plot(arr)
         elif operation == 'plot_xy':
@@ -115,6 +134,7 @@ class MainWindow(QtGui.QMainWindow):
         self.dockarea.addDock(pw, position=['bottom', 'right'][self.insert_dock_right])
         self.namelist[name] = pw
         return pw
+
 
 class NameList(QtGui.QDockWidget):
     def __init__(self, dockarea):
@@ -154,11 +174,13 @@ class NameList(QtGui.QDockWidget):
     def keys(self):
         return self.plot_dict.keys();
 
+
 def main():
     app = QtGui.QApplication([])
     win = MainWindow()
     win.show()
     app.exec_()
+
 
 if __name__ == "__main__":
     main()
