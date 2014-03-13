@@ -11,22 +11,37 @@ def get_widget(rank, name):
         }[rank](name=name)
 
 class CloseableDock(Dock):
+    docklist = []
     def __init__(self, *args, **kwargs):
         super(CloseableDock, self).__init__(*args, **kwargs)
         style = QtGui.QStyleFactory().create("windows")
-        icon = style.standardIcon(QtGui.QStyle.SP_TitleBarCloseButton)
-        button = QtGui.QPushButton(icon, "", self)
-        button.clicked.connect(self.close)
-        button.setGeometry(0, 0, 20, 20)
-        button.raise_()
-        self.closeClicked = button.clicked
+        close_icon = style.standardIcon(QtGui.QStyle.SP_TitleBarCloseButton)
+        close_button = QtGui.QPushButton(close_icon, "", self)
+        close_button.clicked.connect(self.close)
+        close_button.setGeometry(0, 0, 20, 20)
+        close_button.raise_()
+        self.closeClicked = close_button.clicked
+
+        max_icon = style.standardIcon(QtGui.QStyle.SP_TitleBarMaxButton)
+        max_button = QtGui.QPushButton(max_icon, "", self)
+        max_button.clicked.connect(self.maximize)
+        max_button.setGeometry(20, 0, 20, 20)
+        max_button.raise_()
+
         self.closed = False
+        CloseableDock.docklist.append(self)
 
     def close(self):
         self.setParent(None)
         self.closed = True
-        if self._container is not self.area.topContainer:
-            self._container.apoptose()
+        if hasattr(self, '_container'):
+            if self._container is not self.area.topContainer:
+                self._container.apoptose()
+
+    def maximize(self):
+        for d in CloseableDock.docklist:
+            if d is not self and not d.closed:
+                d.close()
 
 class CrosshairPlotWidget(pg.PlotWidget):
     def __init__(self, parametric=False, *args, **kwargs):
@@ -141,6 +156,10 @@ class CrossSectionDock(CloseableDock):
         self.ui.histogram.item.sigLevelChangeFinished.connect(lambda: self.autolevels_action.setChecked(False))
         self.img_view.scene.contextMenu.append(self.autolevels_action)
 
+        self.clear_action = QtGui.QAction('Clear Contents', self)
+        self.clear_action.triggered.connect(self.clear)
+        self.img_view.scene.contextMenu.append(self.clear_action)
+
         self.ui.histogram.gradient.loadPreset('thermal')
         try:
             self.connect_signal()
@@ -187,6 +206,17 @@ class CrossSectionDock(CloseableDock):
 
     def redraw(self):
         self.setImage(self.img_view.imageItem.image)
+
+    def get_data(self):
+        img = self.img_view.imageItem.image
+        if img is not None and img.shape != (1, 1):
+            return img
+        else:
+            return None
+
+    def clear(self):
+        self.img_view.setImage(np.array([[0]]))
+        self.plot_item.enableAutoRange()
 
     def toggle_cross_section(self):
         if self.cross_section_enabled:

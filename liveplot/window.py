@@ -1,6 +1,6 @@
 import logging
 import widgets
-from PyQt4 import QtGui, QtNetwork
+from PyQt4 import QtGui, QtNetwork, QtCore
 from PyQt4.Qt import Qt as QtConst
 from pyqtgraph.dockarea import DockArea
 import numpy as np
@@ -12,9 +12,10 @@ logging.root.setLevel(logging.WARNING)
 class MainWindow(QtGui.QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
+        self.setWindowTitle("Liveplot")
         self.dockarea = DockArea()
         self.setCentralWidget(self.dockarea)
-        self.namelist = NameList(self.dockarea)
+        self.namelist = NameList(self)
         self.addDockWidget(QtConst.LeftDockWidgetArea, self.namelist)
 
         self.listener = QtNetwork.QLocalServer()
@@ -104,7 +105,14 @@ class MainWindow(QtGui.QMainWindow):
             del self.namelist[name]
 
         elif operation == 'plot_y':
-            pw.plot(arr)
+            start_step = meta['start_step']
+            if start_step is not None:
+                x0, dx = start_step
+                nx = len(arr)
+                xs = np.linspace(x0, x0 + (nx-1)*dx, nx)
+                pw.plot(xs, arr)
+            else:
+                pw.plot(arr)
         elif operation == 'plot_xy':
             pw.plot(arr[0], arr[1], parametric=True)
         elif operation == 'plot_z':
@@ -118,7 +126,14 @@ class MainWindow(QtGui.QMainWindow):
             xs, ys = pw.get_data()
             new_ys = list(ys)
             new_ys.append(meta['value'])
-            pw.plot(new_ys)
+            start_step = meta['start_step']
+            if start_step is not None:
+                x0, dx = start_step
+                nx = len(new_ys)
+                xs = np.linspace(x0, x0 + (nx-1)*dx, nx)
+                pw.plot(xs, new_ys)
+            else:
+                pw.plot(new_ys)
         elif operation == 'append_xy':
             xs, ys = pw.get_data()
             xn, yn = meta['value']
@@ -128,22 +143,40 @@ class MainWindow(QtGui.QMainWindow):
             new_ys.append(yn)
             pw.plot(new_xs, new_ys, parametric=True)
 
+        elif operation == 'append_z':
+            image = pw.get_data()
+            if image is None:
+                image = np.array([arr])
+            else:
+                image = np.vstack((image, [arr]))
+            start_step = meta['start_step']
+            if start_step is not None:
+                (x0, dx), (y0, dy) = start_step
+                pw.setImage(image, pos=(x0, y0), scale=(dx, dy))
+            else:
+                pw.setImage(image)
+
     def add_new_plot(self, rank, name):
         pw = widgets.get_widget(rank, name)
-        self.insert_dock_right = not self.insert_dock_right
-        self.dockarea.addDock(pw, position=['bottom', 'right'][self.insert_dock_right])
+        self.add_plot(pw)
         self.namelist[name] = pw
         return pw
 
+    def add_plot(self, pw):
+        self.insert_dock_right = not self.insert_dock_right
+        self.dockarea.addDock(pw, position=['bottom', 'right'][self.insert_dock_right])
+
+    def sizeHint(self):
+        return QtCore.QSize(1000, 600)
 
 class NameList(QtGui.QDockWidget):
-    def __init__(self, dockarea):
+    def __init__(self, window):
         super(NameList, self).__init__('Current Plots')
         self.namelist_model = QtGui.QStandardItemModel()
         self.namelist_view = QtGui.QListView()
         self.namelist_view.setModel(self.namelist_model)
         self.setWidget(self.namelist_view)
-        self.dockarea = dockarea
+        self.window = window
         self.plot_dict = {}
 
         self.namelist_view.doubleClicked.connect(self.activate_item)
@@ -152,7 +185,8 @@ class NameList(QtGui.QDockWidget):
         item = self.namelist_model.itemFromIndex(index)
         plot = self.plot_dict[str(item.text())]
         if plot.closed:
-            self.dockarea.addDock(plot)
+            plot.closed = False
+            self.window.add_plot(plot)
 
     def __getitem__(self, item):
         return self.plot_dict[item]
