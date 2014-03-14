@@ -83,7 +83,7 @@ class MainWindow(QtGui.QMainWindow):
                 self.dockarea.addDock(pw)
 
         else:
-            if name != "*" and operation != "remove" and "rank" in meta:
+            if name != "*" and operation != "remove" and ("rank" in meta):
                 pw = self.add_new_plot(meta['rank'], name)
                 return
 
