@@ -8,7 +8,6 @@ import json
 
 logging.root.setLevel(logging.WARNING)
 
-
 class MainWindow(QtGui.QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
@@ -64,7 +63,6 @@ class MainWindow(QtGui.QMainWindow):
         self.do_operation(arr)
 
     def do_operation(self, arr=None):
-
         def clear(name):
             self.namelist[name].clear()
 
@@ -208,13 +206,11 @@ class NameList(QtGui.QDockWidget):
     def keys(self):
         return self.plot_dict.keys();
 
-
 def main():
     app = QtGui.QApplication([])
     win = MainWindow()
     win.show()
     app.exec_()
-
 
 if __name__ == "__main__":
     main()

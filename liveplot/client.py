@@ -139,6 +139,6 @@ class LivePlotClient(QtNetwork.QLocalSocket):
         })
 
 
-def disconnect_received(self):
-        self.is_connected = False
-        warnings.warn('Disconnected from LivePlotter server, plotting has been disabled')
+    def disconnect_received(self):
+            self.is_connected = False
+            warnings.warn('Disconnected from LivePlotter server, plotting has been disabled')
