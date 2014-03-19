@@ -22,13 +22,18 @@ Requirements
 - Numpy
 - [PyQt4](http://www.riverbankcomputing.com/software/pyqt/download)
 - [pyqtgraph](http://www.pyqtgraph.org)
+- [pyzmq](http://zeromq.github.io/pyzmq/index.html)
 
 pyqtgraph will be installed automatically from PyPI if not found
 
 Basic Usage
 -----------
 
-Put the liveplot directory in your path somewhere or install globally with
+Install from PyPI
+
+    pip install liveplot
+
+or from the source directory
 
     python setup.py install
 
@@ -36,9 +41,7 @@ and start the window
 
     python -m liveplot
 
-On windows an executable for the window is available
-
-    bin\liveplot.exe
+~On windows an executable for the window is available~ TODO
 
 If the window has been successfully started, open a client and plot
 

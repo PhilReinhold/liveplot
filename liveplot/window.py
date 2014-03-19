@@ -1,10 +1,11 @@
 import logging
+import socket
+import zmq
 import widgets
-from PyQt4 import QtGui, QtNetwork, QtCore
+from PyQt4 import QtGui, QtCore
 from PyQt4.Qt import Qt as QtConst
 from pyqtgraph.dockarea import DockArea
 import numpy as np
-import json
 
 logging.root.setLevel(logging.WARNING)
 
@@ -16,23 +17,24 @@ class MainWindow(QtGui.QMainWindow):
         self.setCentralWidget(self.dockarea)
         self.namelist = NameList(self)
         self.addDockWidget(QtConst.LeftDockWidgetArea, self.namelist)
-
-        self.listener = QtNetwork.QLocalServer()
-        self.listener.removeServer("LivePlotter")
-        self.listener.listen("LivePlotter")
-        logging.debug('connection set to %s' % self.listener.fullServerName())
-        while self.listener.hasPendingConnections():
-            self.accept()
-        self.listener.newConnection.connect(self.accept)
+        self.ctx = zmq.Context()
+        sock = self.ctx.socket(zmq.SUB)
+        sock.bind('tcp://127.0.0.1:7755')
+        sock.setsockopt(zmq.SUBSCRIBE, '')
+        self.conn = ZMQSocket(sock)
+        self.conn.readyRead.connect(lambda: self.read_from(self.conn))
         self.bytes = bytearray()
         self.target_size = 0
         self.meta = None
         self.insert_dock_right = True
         self.conns = []
 
+
     def accept(self):
         logging.debug('connection accepted')
         conn = self.listener.nextPendingConnection()
+        if hasattr(socket, 'fromfd'):
+            socket.fromfd(conn.socketDescriptor(), socket.AF_INET, socket.SOCK_STREAM).setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 2**22)
         self.conns.append(conn)
         conn.readyRead.connect(lambda: self.read_from(conn))
 
@@ -40,10 +42,12 @@ class MainWindow(QtGui.QMainWindow):
     def read_from(self, conn):
         logging.debug('reading data')
         if not self.target_size:
-            self.meta = json.loads(str(conn.read(200).rstrip('\x00')))
+            self.meta = conn._socket.recv_json()
             self.target_size = self.meta['arrsize']
         if self.target_size > 0:
-            self.bytes.extend(bytearray(conn.read(self.target_size - len(self.bytes))))
+            n = self.target_size - len(self.bytes)
+            data = bytearray(conn.read(n))
+            self.bytes.extend(data)
         if len(self.bytes) == self.target_size:
             self.process_bytes()
         if conn.bytesAvailable():
@@ -181,6 +185,25 @@ class NameList(QtGui.QDockWidget):
         self.namelist_model.removeRow(self.namelist_model.findItems(name)[0].index().row())
         self.plot_dict[name].close()
         del self.plot_dict[name]
+
+class ZMQSocket(QtCore.QObject):
+    readyRead = QtCore.pyqtSignal()
+    def __init__(self, socket):
+        super(ZMQSocket, self).__init__()
+        self._socket = socket
+        self.notifier = QtCore.QSocketNotifier(socket.fd, QtCore.QSocketNotifier.Read)
+        self.notifier.activated.connect(self.activity)
+
+    def read(self, n):
+        return self._socket.recv()
+
+    def activity(self):
+        if self.bytesAvailable():
+            self.readyRead.emit()
+
+    def bytesAvailable(self):
+        return self._socket.poll(0)
+
 
 def main():
     app = QtGui.QApplication([])

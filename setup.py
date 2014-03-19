@@ -4,7 +4,7 @@ args = dict(
     name="liveplot",
     version="0.1",
     packages=find_packages(),
-    install_requires=["pyqtgraph>=0.9"],
+    install_requires=["pyqtgraph>=0.9", "pyzmq>=14.0"],
     author="Philip Reinhold",
     author_email="pcreinhold@gmail.com",
     license="MIT",
@@ -17,7 +17,7 @@ try:
         windows=[{
             "script":"liveplot\\__main__.py",
             "icon_resources": [(1, "icon.ico")],
-            "dest_base":"..\\bin\\liveplot",
+            "dest_base":"liveplot",
             }],
         options={
             "py2exe": {

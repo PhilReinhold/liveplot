@@ -1,26 +1,19 @@
-import json
 import warnings
-from PyQt4 import QtCore, QtNetwork
 import numpy as np
 import logging
+import zmq
 
 __author__ = 'phil'
 
 logging.root.setLevel(logging.DEBUG)
 
-class LivePlotClient(QtNetwork.QLocalSocket):
-    def __init__(self):
-        self.app = QtCore.QCoreApplication.instance()
-        if self.app is None:
-            print 'app not found'
-            self.app = QtCore.QCoreApplication([])
-        super(LivePlotClient, self).__init__()
-        self.connectToServer("LivePlotter")
-        if not self.waitForConnected(1000):
-            raise EnvironmentError("Couldn't find LivePlotter instance")
-        logging.debug('connected to %s', self.fullServerName())
-        self.disconnected.connect(self.disconnect_received)
+class LivePlotClient(object):
+    def __init__(self, timeout=2000):
+        ctx = zmq.Context()
+        self.sock = ctx.socket(zmq.PUB)
+        self.sock.connect('tcp://127.0.0.1:7755')
         self.is_connected = True
+        self.timeout = timeout
 
     def send_to_plotter(self, meta, arr=None):
         if not self.is_connected:
@@ -32,18 +25,9 @@ class LivePlotClient(QtNetwork.QLocalSocket):
             meta['shape'] = arr.shape
         else:
             meta['arrsize'] = 0
-        bytes = bytearray(json.dumps(meta))
-        if len(bytes) > 200:
-            print meta
-            raise ValueError('Meta length exceeds maximum of 200')
-        bytes = bytes.ljust(200, '\x00')
+        self.sock.send_json(meta)
         if arr is not None:
-            bytes.extend(arrbytes)
-        for n in range(int(np.ceil(len(bytes)/8192.))):
-            interval = bytes[n*8192:min((n+1)*8192, len(bytes))]
-            self.write(interval)
-            self.waitForBytesWritten(1000)
-
+            self.sock.send(arrbytes)
 
     def plot_y(self, name, arr, extent=None, start_step=None):
         arr = np.array(arr)
