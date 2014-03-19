@@ -253,7 +253,6 @@ class CrossSectionDock(CloseableDock):
         self.area.addDock(self.v_cross_dock, position='right', relativeTo=self.h_cross_dock)
         self.cross_section_enabled = True
 
-
     def hide_cross_section(self):
         if self.cross_section_enabled:
             self.plot_item.removeItem(self.h_line)

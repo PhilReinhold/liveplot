@@ -67,6 +67,15 @@ class MainWindow(QtGui.QMainWindow):
         self.do_operation(arr)
 
     def do_operation(self, arr=None):
+        def clear(name):
+            self.namelist[name].clear()
+
+        def close(name):
+            self.namelist[name].close()
+
+        def remove(name):
+            del self.namelist[name]
+
         meta = self.meta
         operation = meta['operation']
         name = meta['name']
@@ -78,12 +87,25 @@ class MainWindow(QtGui.QMainWindow):
                 self.dockarea.addDock(pw)
 
         else:
-            if operation == 'clear':
+            if name != "*" and operation != "remove" and ("rank" in meta):
+                pw = self.add_new_plot(meta['rank'], name)
                 return
-            pw = self.add_new_plot(meta['rank'], name)
+
+            if operation == 'clear' and name == "*":
+                map(clear, self.namelist.keys())
+            if operation == 'close' and name == "*":
+                map(close, self.namelist.keys())
+            if operation == 'remove' and name == "*":
+                map(remove, self.namelist.keys())
+            return
 
         if operation == 'clear':
             pw.clear()
+        if operation == 'close':
+            pw.close()
+        if operation == 'remove':
+            del self.namelist[name]
+
         elif operation == 'plot_y':
             start_step = meta['start_step']
             if start_step is not None:
@@ -136,7 +158,6 @@ class MainWindow(QtGui.QMainWindow):
             else:
                 pw.setImage(image)
 
-
     def add_new_plot(self, rank, name):
         pw = widgets.get_widget(rank, name)
         self.add_plot(pw)
@@ -186,6 +207,9 @@ class NameList(QtGui.QDockWidget):
         self.plot_dict[name].close()
         del self.plot_dict[name]
 
+    def keys(self):
+        return self.plot_dict.keys();
+
 class ZMQSocket(QtCore.QObject):
     readyRead = QtCore.pyqtSignal()
     def __init__(self, socket):
@@ -203,7 +227,6 @@ class ZMQSocket(QtCore.QObject):
 
     def bytesAvailable(self):
         return self._socket.poll(0)
-
 
 def main():
     app = QtGui.QApplication([])

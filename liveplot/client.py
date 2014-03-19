@@ -18,6 +18,8 @@ class LivePlotClient(object):
     def send_to_plotter(self, meta, arr=None):
         if not self.is_connected:
             return
+        if meta["name"] == None:
+            meta["name"] = "*";
         if arr is not None:
             arrbytes = bytearray(arr)
             meta['arrsize'] = len(arrbytes)
@@ -77,7 +79,7 @@ class LivePlotClient(object):
     def append_y(self, name, point, start_step=None):
         self.send_to_plotter({
             'name': name,
-            'operation':'append_y',
+            'operation': 'append_y',
             'value': point,
             'start_step': start_step,
             'rank': 1,
@@ -86,7 +88,7 @@ class LivePlotClient(object):
     def append_xy(self, name, x, y):
         self.send_to_plotter({
             'name': name,
-            'operation':'append_xy',
+            'operation': 'append_xy',
             'value': (x, y),
             'rank': 1,
         })
@@ -101,13 +103,24 @@ class LivePlotClient(object):
             }
         self.send_to_plotter(meta, arr)
 
-
-    def clear(self, name):
+    def clear(self, name=None):
         self.send_to_plotter({
-            'name':name,
-            'operation':'clear'
+            'name': name,
+            'operation': 'clear'
+        })
+
+    def hide(self, name=None):
+        self.send_to_plotter({
+            'name': name,
+            'operation': 'close'
+        })
+
+    def remove(self, name=None):
+        self.send_to_plotter({
+            'name': name,
+            'operation': 'remove'
         })
 
     def disconnect_received(self):
-        self.is_connected = False
-        warnings.warn('Disconnected from LivePlotter server, plotting has been disabled')
+            self.is_connected = False
+            warnings.warn('Disconnected from LivePlotter server, plotting has been disabled')
