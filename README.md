@@ -13,9 +13,9 @@ Liveplot works in two
 processes, one of which is a pyqt application hosting the window, the other is
 your script, which sends data to the window over a named pipe. The intended
 workflow is to open the window once (per session) and keep it open, rather than
-restarting it for every run of the script. Ideally, multiple scripts can
+restarting it for every run of the script. ~~Ideally, multiple scripts can
 communicate with the same window, and data remains available in the window until
-it is overwritten.
+it is overwritten.~~ (Broken after moving to zmq, coming again soon)
 
 Requirements
 ------------
@@ -41,7 +41,7 @@ and start the window
 
     python -m liveplot
 
-~On windows an executable for the window is available~ TODO
+~~On windows an executable for the window is available~~ TODO
 
 If the window has been successfully started, open a client and plot
 
