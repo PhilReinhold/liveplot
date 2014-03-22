@@ -4,6 +4,7 @@ from PyQt4.QtGui import QApplication, QWidget, QVBoxLayout, QSpinBox, QHBoxLayou
     QPlainTextEdit, QProgressBar
 import numpy as np
 import sys
+import signal
 from liveplot import LivePlotClient
 
 def test_plot_y():
@@ -126,7 +127,10 @@ class TestWindow(QWidget):
 
 if __name__ == "__main__":
     app = QApplication([])
-    c = LivePlotClient()
+    c = LivePlotClient(size=2**28)
     win = TestWindow()
     win.show()
-    sys.exit(app.exec_())
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    app.exec_()
+    c.close()
+    sys.exit()

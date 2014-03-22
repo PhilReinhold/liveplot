@@ -1,6 +1,12 @@
+import atexit
+import json
+import uuid
 import warnings
 import numpy as np
 import logging
+from PyQt4.QtNetwork import QLocalSocket
+from PyQt4.QtCore import QCoreApplication, QSharedMemory
+import signal
 import zmq
 
 __author__ = 'phil'
@@ -8,28 +14,60 @@ __author__ = 'phil'
 logging.root.setLevel(logging.DEBUG)
 
 class LivePlotClient(object):
-    def __init__(self, timeout=2000):
-        ctx = zmq.Context()
-        self.sock = ctx.socket(zmq.PUB)
-        self.sock.connect('tcp://127.0.0.1:7755')
+    def __init__(self, timeout=2000, size=2**20):
+        self.app = QCoreApplication.instance()
+        if self.app is None:
+            self.app = QCoreApplication([])
+        self.sock = QLocalSocket()
+        self.sock.connectToServer("LivePlot")
+        if not self.sock.waitForConnected():
+            raise EnvironmentError("Couldn't find LivePlotter instance")
+        self.sock.disconnected.connect(self.disconnect_received)
+
+        key = str(uuid.uuid4())
+        self.shared_mem = QSharedMemory(key)
+        if not self.shared_mem.create(size):
+            raise Exception("Couldn't create shared memory %s" % self.shared_mem.errorString())
+        logging.debug('Memory created with key %s' % key)
+        self.sock.write(key)
+        self.sock.waitForBytesWritten()
+
         self.is_connected = True
         self.timeout = timeout
+
+        atexit.register(self.close)
+
+    def close(self):
+        self.shared_mem.detach()
 
     def send_to_plotter(self, meta, arr=None):
         if not self.is_connected:
             return
-        if meta["name"] == None:
+
+        if meta["name"] is None:
             meta["name"] = "*";
         if arr is not None:
             arrbytes = bytearray(arr)
-            meta['arrsize'] = len(arrbytes)
+            arrsize = len(arrbytes)
+            if arrsize > self.shared_mem.size():
+                raise ValueError("Array too big %s > %s" % (arrsize, self.shared_mem.size()))
+            meta['arrsize'] = arrsize
             meta['dtype'] = str(arr.dtype)
             meta['shape'] = arr.shape
         else:
             meta['arrsize'] = 0
-        self.sock.send_json(meta)
-        if arr is not None:
-            self.sock.send(arrbytes)
+        meta_bytes = json.dumps(meta).ljust(200)
+        if len(meta_bytes) > 200:
+            raise ValueError("meta object is too large (> 200 char)")
+
+        if arr is None:
+            self.sock.write(meta_bytes)
+        else:
+            self.shared_mem.lock()
+            self.sock.write(meta_bytes)
+            region = self.shared_mem.data()
+            region[:arrsize] = arrbytes
+            self.shared_mem.unlock()
 
     def plot_y(self, name, arr, extent=None, start_step=None):
         arr = np.array(arr)

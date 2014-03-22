@@ -131,6 +131,11 @@ class CrosshairDock(CloseableDock):
         else:
             return [], []
 
+    def redraw(self):
+        xs, ys = self.get_data()
+        self.clear()
+        self.plot(xs, ys)
+
 class CrossSectionDock(CloseableDock):
     def __init__(self, trace_size=80, **kwargs):
         self.plot_item = view = pg.PlotItem(labels=kwargs.pop('labels', None))

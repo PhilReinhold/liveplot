@@ -1,15 +1,18 @@
+import atexit
+import json
 import logging
-import socket
-import zmq
+import signal
 import widgets
-from PyQt4 import QtGui, QtCore
+import numpy as np
+from PyQt4.QtCore import QSharedMemory, QSize
+from PyQt4.QtGui import QMainWindow, QApplication, QStandardItem, QDockWidget, QStandardItemModel, QListView
+from PyQt4.QtNetwork import QLocalServer
 from PyQt4.Qt import Qt as QtConst
 from pyqtgraph.dockarea import DockArea
-import numpy as np
 
 logging.root.setLevel(logging.WARNING)
 
-class MainWindow(QtGui.QMainWindow):
+class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
         self.setWindowTitle("Liveplot")
@@ -17,54 +20,91 @@ class MainWindow(QtGui.QMainWindow):
         self.setCentralWidget(self.dockarea)
         self.namelist = NameList(self)
         self.addDockWidget(QtConst.LeftDockWidgetArea, self.namelist)
-        self.ctx = zmq.Context()
-        sock = self.ctx.socket(zmq.SUB)
-        sock.bind('tcp://127.0.0.1:7755')
-        sock.setsockopt(zmq.SUBSCRIBE, '')
-        self.conn = ZMQSocket(sock)
-        self.conn.readyRead.connect(lambda: self.read_from(self.conn))
+        #self.ctx = zmq.Context()
+        #sock = self.ctx.socket(zmq.SUB)
+        #sock.bind('tcp://127.0.0.1:7755')
+        #sock.setsockopt(zmq.SUBSCRIBE, '')
+        #self.conn = ZMQSocket(sock)
+        #self.conn.readyRead.connect(lambda: self.read_from(self.conn))
+        self.server = QLocalServer()
+        self.server.removeServer('LivePlot')
+        self.server.listen('LivePlot')
+        self.server.newConnection.connect(self.accept)
         self.bytes = bytearray()
         self.target_size = 0
         self.meta = None
         self.insert_dock_right = True
         self.conns = []
+        self.shared_mems = []
+        signal.signal(signal.SIGINT, self.close)
+
+
+    def close(self, sig=None, frame=None):
+        print 'closing'
+        for conn in self.conns:
+            conn.close()
+        for shm in self.shared_mems:
+            shm.detach()
+        QApplication.instance().exit()
 
 
     def accept(self):
         logging.debug('connection accepted')
-        conn = self.listener.nextPendingConnection()
-        if hasattr(socket, 'fromfd'):
-            socket.fromfd(conn.socketDescriptor(), socket.AF_INET, socket.SOCK_STREAM).setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 2**22)
+        conn = self.server.nextPendingConnection()
+        conn.waitForReadyRead()
+        key = str(conn.read(36))
+        memory = QSharedMemory()
+        memory.setKey(key)
+        memory.attach()
+        logging.debug('attached to memory %s with size %s' % (key, memory.size()))
+        atexit.register(memory.detach)
         self.conns.append(conn)
-        conn.readyRead.connect(lambda: self.read_from(conn))
+        self.shared_mems.append(memory)
+        conn.readyRead.connect(lambda: self.read_from(conn, memory))
 
     # noinspection PyNoneFunctionAssignment
-    def read_from(self, conn):
+    def read_from(self, conn, memory):
         logging.debug('reading data')
-        if not self.target_size:
-            self.meta = conn._socket.recv_json()
-            self.target_size = self.meta['arrsize']
-        if self.target_size > 0:
-            n = self.target_size - len(self.bytes)
-            data = bytearray(conn.read(n))
-            self.bytes.extend(data)
-        if len(self.bytes) == self.target_size:
-            self.process_bytes()
-        if conn.bytesAvailable():
-            self.read_from(conn)
-
-    def process_bytes(self):
-        self.target_size = 0
-        if len(self.bytes) > 0:
-            arr = np.frombuffer(buffer(self.bytes), dtype=self.meta['dtype'])
+        self.meta = json.loads(conn.read(200))
+        if self.meta['arrsize'] != 0:
+            memory.lock()
+            ba = memory.data()[0:self.meta['arrsize']]
+            arr = np.frombuffer(buffer(ba))
+            memory.unlock()
             try:
                 arr.resize(self.meta['shape'])
             except ValueError:
                 arr = arr.reshape(self.meta['shape'])
         else:
             arr = None
-        self.bytes = bytearray()
         self.do_operation(arr)
+        if conn.bytesAvailable():
+            self.read_from(conn, memory)
+
+    #     if not self.target_size:
+    #         self.meta = conn._socket.recv_json()
+    #         self.target_size = self.meta['arrsize']
+    #     if self.target_size > 0:
+    #         n = self.target_size - len(self.bytes)
+    #         data = bytearray(conn.read(n))
+    #         self.bytes.extend(data)
+    #     if len(self.bytes) == self.target_size:
+    #         self.process_bytes()
+    #     if conn.bytesAvailable():
+    #         self.read_from(conn)
+    #
+    # def process_bytes(self):
+    #     self.target_size = 0
+    #     if len(self.bytes) > 0:
+    #         arr = np.frombuffer(buffer(self.bytes), dtype=self.meta['dtype'])
+    #         try:
+    #             arr.resize(self.meta['shape'])
+    #         except ValueError:
+    #             arr = arr.reshape(self.meta['shape'])
+    #     else:
+    #         arr = None
+    #     self.bytes = bytearray()
+    #     self.do_operation(arr)
 
     def do_operation(self, arr=None):
         def clear(name):
@@ -79,6 +119,7 @@ class MainWindow(QtGui.QMainWindow):
         meta = self.meta
         operation = meta['operation']
         name = meta['name']
+        print meta
 
         if name in self.namelist:
             pw = self.namelist[name]
@@ -87,23 +128,23 @@ class MainWindow(QtGui.QMainWindow):
                 self.dockarea.addDock(pw)
 
         else:
-            if name != "*" and operation != "remove" and ("rank" in meta):
-                pw = self.add_new_plot(meta['rank'], name)
-                return
-
             if operation == 'clear' and name == "*":
                 map(clear, self.namelist.keys())
-            if operation == 'close' and name == "*":
+                return
+            elif operation == 'close' and name == "*":
                 map(close, self.namelist.keys())
-            if operation == 'remove' and name == "*":
+                return
+            elif operation == 'remove' and name == "*":
                 map(remove, self.namelist.keys())
-            return
+                return
+            else:
+                pw = self.add_new_plot(meta['rank'], name)
 
         if operation == 'clear':
             pw.clear()
-        if operation == 'close':
+        elif operation == 'close':
             pw.close()
-        if operation == 'remove':
+        elif operation == 'remove':
             del self.namelist[name]
 
         elif operation == 'plot_y':
@@ -162,6 +203,11 @@ class MainWindow(QtGui.QMainWindow):
         pw = widgets.get_widget(rank, name)
         self.add_plot(pw)
         self.namelist[name] = pw
+        for name in self.namelist.keys():
+            pw2 = self.namelist[name]
+            if not pw2.closed:
+                pw2.redraw()
+
         return pw
 
     def add_plot(self, pw):
@@ -169,13 +215,13 @@ class MainWindow(QtGui.QMainWindow):
         self.dockarea.addDock(pw, position=['bottom', 'right'][self.insert_dock_right])
 
     def sizeHint(self):
-        return QtCore.QSize(1000, 600)
+        return QSize(1000, 600)
 
-class NameList(QtGui.QDockWidget):
+class NameList(QDockWidget):
     def __init__(self, window):
         super(NameList, self).__init__('Current Plots')
-        self.namelist_model = QtGui.QStandardItemModel()
-        self.namelist_view = QtGui.QListView()
+        self.namelist_model = QStandardItemModel()
+        self.namelist_view = QListView()
         self.namelist_view.setModel(self.namelist_model)
         self.setWidget(self.namelist_view)
         self.window = window
@@ -194,7 +240,7 @@ class NameList(QtGui.QDockWidget):
         return self.plot_dict[item]
 
     def __setitem__(self, name, plot):
-        model = QtGui.QStandardItem(name)
+        model = QStandardItem(name)
         model.setEditable(False)
         self.namelist_model.appendRow(model)
         self.plot_dict[name] = plot
@@ -209,27 +255,27 @@ class NameList(QtGui.QDockWidget):
 
     def keys(self):
         return self.plot_dict.keys();
-
-class ZMQSocket(QtCore.QObject):
-    readyRead = QtCore.pyqtSignal()
-    def __init__(self, socket):
-        super(ZMQSocket, self).__init__()
-        self._socket = socket
-        self.notifier = QtCore.QSocketNotifier(socket.fd, QtCore.QSocketNotifier.Read)
-        self.notifier.activated.connect(self.activity)
-
-    def read(self, n):
-        return self._socket.recv()
-
-    def activity(self):
-        if self.bytesAvailable():
-            self.readyRead.emit()
-
-    def bytesAvailable(self):
-        return self._socket.poll(0)
+#
+# class ZMQSocket(QtCore.QObject):
+#     readyRead = QtCore.pyqtSignal()
+#     def __init__(self, socket):
+#         super(ZMQSocket, self).__init__()
+#         self._socket = socket
+#         self.notifier = QtCore.QSocketNotifier(socket.fd, QtCore.QSocketNotifier.Read)
+#         self.notifier.activated.connect(self.activity)
+#
+#     def read(self, n):
+#         return self._socket.recv()
+#
+#     def activity(self):
+#         if self.bytesAvailable():
+#             self.readyRead.emit()
+#
+#     def bytesAvailable(self):
+#         return self._socket.poll(0)
 
 def main():
-    app = QtGui.QApplication([])
+    app = QApplication([])
     win = MainWindow()
     win.show()
     app.exec_()
