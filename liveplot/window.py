@@ -12,6 +12,7 @@ from pyqtgraph.dockarea import DockArea
 
 logging.root.setLevel(logging.WARNING)
 
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
@@ -20,12 +21,6 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.dockarea)
         self.namelist = NameList(self)
         self.addDockWidget(QtConst.LeftDockWidgetArea, self.namelist)
-        #self.ctx = zmq.Context()
-        #sock = self.ctx.socket(zmq.SUB)
-        #sock.bind('tcp://127.0.0.1:7755')
-        #sock.setsockopt(zmq.SUBSCRIBE, '')
-        #self.conn = ZMQSocket(sock)
-        #self.conn.readyRead.connect(lambda: self.read_from(self.conn))
         self.server = QLocalServer()
         self.server.removeServer('LivePlot')
         self.server.listen('LivePlot')
@@ -56,11 +51,12 @@ class MainWindow(QMainWindow):
         memory = QSharedMemory()
         memory.setKey(key)
         memory.attach()
-        logging.debug('attached to memory %s with size %s' % (key, memory.size()))
+        logging.debug('attached to memory %s with size %s'%(key, memory.size()))
         atexit.register(memory.detach)
         self.conns.append(conn)
         self.shared_mems.append(memory)
         conn.readyRead.connect(lambda: self.read_from(conn, memory))
+        conn.disconnected.connect(memory.detach)
         conn.write('ok')
 
     # noinspection PyNoneFunctionAssignment
@@ -138,7 +134,6 @@ class MainWindow(QMainWindow):
                 return
             pw = self.add_new_plot(meta['rank'], name)
 
-
         if operation == 'clear':
             pw.clear()
         elif operation == 'close':
@@ -151,7 +146,7 @@ class MainWindow(QMainWindow):
             if start_step is not None:
                 x0, dx = start_step
                 nx = len(arr)
-                xs = np.linspace(x0, x0 + (nx-1)*dx, nx)
+                xs = np.linspace(x0, x0 + (nx - 1)*dx, nx)
                 pw.plot(xs, arr)
             else:
                 pw.plot(arr)
@@ -172,7 +167,7 @@ class MainWindow(QMainWindow):
             if start_step is not None:
                 x0, dx = start_step
                 nx = len(new_ys)
-                xs = np.linspace(x0, x0 + (nx-1)*dx, nx)
+                xs = np.linspace(x0, x0 + (nx - 1)*dx, nx)
                 pw.plot(xs, new_ys)
             else:
                 pw.plot(new_ys)
@@ -210,6 +205,7 @@ class MainWindow(QMainWindow):
 
     def sizeHint(self):
         return QSize(1000, 600)
+
 
 class NameList(QDockWidget):
     def __init__(self, window):
@@ -249,30 +245,14 @@ class NameList(QDockWidget):
 
     def keys(self):
         return self.plot_dict.keys();
-#
-# class ZMQSocket(QtCore.QObject):
-#     readyRead = QtCore.pyqtSignal()
-#     def __init__(self, socket):
-#         super(ZMQSocket, self).__init__()
-#         self._socket = socket
-#         self.notifier = QtCore.QSocketNotifier(socket.fd, QtCore.QSocketNotifier.Read)
-#         self.notifier.activated.connect(self.activity)
-#
-#     def read(self, n):
-#         return self._socket.recv()
-#
-#     def activity(self):
-#         if self.bytesAvailable():
-#             self.readyRead.emit()
-#
-#     def bytesAvailable(self):
-#         return self._socket.poll(0)
+
 
 def main():
     app = QApplication([])
     win = MainWindow()
     win.show()
     app.exec_()
+
 
 if __name__ == "__main__":
     main()

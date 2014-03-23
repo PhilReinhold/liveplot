@@ -129,7 +129,9 @@ if __name__ == "__main__":
     c = LivePlotClient(size=2**28)
     win = TestWindow()
     win.show()
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    def clean():
+        c.close()
+        sys.exit()
+    signal.signal(signal.SIGINT, lambda sig, frame: clean())
     app.exec_()
-    c.close()
-    sys.exit()
+    clean()

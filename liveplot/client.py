@@ -6,8 +6,6 @@ import numpy as np
 import logging
 from PyQt4.QtNetwork import QLocalSocket
 from PyQt4.QtCore import QCoreApplication, QSharedMemory
-import signal
-import zmq
 
 __author__ = 'phil'
 
