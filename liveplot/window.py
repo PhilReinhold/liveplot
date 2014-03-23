@@ -61,6 +61,7 @@ class MainWindow(QMainWindow):
         self.conns.append(conn)
         self.shared_mems.append(memory)
         conn.readyRead.connect(lambda: self.read_from(conn, memory))
+        conn.write('ok')
 
     # noinspection PyNoneFunctionAssignment
     def read_from(self, conn, memory):
@@ -71,10 +72,8 @@ class MainWindow(QMainWindow):
             ba = memory.data()[0:self.meta['arrsize']]
             arr = np.frombuffer(buffer(ba))
             memory.unlock()
-            try:
-                arr.resize(self.meta['shape'])
-            except ValueError:
-                arr = arr.reshape(self.meta['shape'])
+            conn.write('ok')
+            arr = arr.reshape(self.meta['shape']).copy()
         else:
             arr = None
         self.do_operation(arr)
@@ -119,7 +118,6 @@ class MainWindow(QMainWindow):
         meta = self.meta
         operation = meta['operation']
         name = meta['name']
-        print meta
 
         if name in self.namelist:
             pw = self.namelist[name]
@@ -127,18 +125,19 @@ class MainWindow(QMainWindow):
                 pw.closed = False
                 self.dockarea.addDock(pw)
 
-        else:
-            if operation == 'clear' and name == "*":
+        elif name == "*":
+            if operation == 'clear':
                 map(clear, self.namelist.keys())
-                return
-            elif operation == 'close' and name == "*":
+            elif operation == 'close':
                 map(close, self.namelist.keys())
-                return
-            elif operation == 'remove' and name == "*":
+            elif operation == 'remove':
                 map(remove, self.namelist.keys())
+            return
+        else:
+            if operation in ('clear', 'close', 'remove'):
                 return
-            else:
-                pw = self.add_new_plot(meta['rank'], name)
+            pw = self.add_new_plot(meta['rank'], name)
+
 
         if operation == 'clear':
             pw.clear()
@@ -203,11 +202,6 @@ class MainWindow(QMainWindow):
         pw = widgets.get_widget(rank, name)
         self.add_plot(pw)
         self.namelist[name] = pw
-        for name in self.namelist.keys():
-            pw2 = self.namelist[name]
-            if not pw2.closed:
-                pw2.redraw()
-
         return pw
 
     def add_plot(self, pw):

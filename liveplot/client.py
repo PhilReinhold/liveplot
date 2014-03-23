@@ -11,7 +11,7 @@ import zmq
 
 __author__ = 'phil'
 
-logging.root.setLevel(logging.DEBUG)
+logging.root.setLevel(logging.WARNING)
 
 class LivePlotClient(object):
     def __init__(self, timeout=2000, size=2**20):
@@ -28,7 +28,7 @@ class LivePlotClient(object):
         self.shared_mem = QSharedMemory(key)
         if not self.shared_mem.create(size):
             raise Exception("Couldn't create shared memory %s" % self.shared_mem.errorString())
-        logging.debug('Memory created with key %s' % key)
+        logging.debug('Memory created with key %s and size %s' % (key, self.shared_mem.size()))
         self.sock.write(key)
         self.sock.waitForBytesWritten()
 
@@ -63,6 +63,9 @@ class LivePlotClient(object):
         if arr is None:
             self.sock.write(meta_bytes)
         else:
+            if not self.sock.bytesAvailable():
+                self.sock.waitForReadyRead()
+            self.sock.read(2)
             self.shared_mem.lock()
             self.sock.write(meta_bytes)
             region = self.shared_mem.data()

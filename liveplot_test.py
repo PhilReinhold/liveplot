@@ -53,9 +53,8 @@ def test_plot_z():
 
 def test_plot_huge():
     xs, ys = np.mgrid[-2500:2500, -2500:2500]/1000.
-    rs = np.sqrt(xs**2 + ys**2)
-    z = np.sinc(rs)
-    c.plot_z('huge sinc', z, extent=((-5, 5), (-10, 10)))
+    z = np.sqrt(xs**2 + ys**2)
+    c.plot_z('huge image', z, extent=((-5, 5), (-10, 10)))
     yield
 
 def test_append_z():
