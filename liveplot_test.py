@@ -52,7 +52,7 @@ def test_plot_z():
         yield
 
 def test_plot_huge():
-    xs, ys = np.mgrid[-2500:2500, -2500:2500]/1000.
+    xs, ys = np.mgrid[-1500:1500, -1500:1500]/1000.
     z = np.sqrt(xs**2 + ys**2)
     c.plot_z('huge image', z, extent=((-5, 5), (-10, 10)))
     yield
