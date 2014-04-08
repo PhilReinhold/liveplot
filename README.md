@@ -13,16 +13,16 @@ Liveplot works in two
 processes, one of which is a pyqt application hosting the window, the other is
 your script, which sends data to the window over a named pipe. The intended
 workflow is to open the window once (per session) and keep it open, rather than
-restarting it for every run of the script. ~~Ideally, multiple scripts can
+restarting it for every run of the script. Ideally, multiple scripts can
 communicate with the same window, and data remains available in the window until
-it is overwritten.~~ (Broken after moving to zmq, coming again soon)
+it is overwritten.
 
 Requirements
 ------------
 - Numpy
 - [PyQt4](http://www.riverbankcomputing.com/software/pyqt/download)
 - [pyqtgraph](http://www.pyqtgraph.org)
-- [pyzmq](http://zeromq.github.io/pyzmq/index.html)
+- ~~[pyzmq](http://zeromq.github.io/pyzmq/index.html)~~
 
 pyqtgraph will be installed automatically from PyPI if not found
 
@@ -60,6 +60,14 @@ an error. See more examples with the test suite,
     python liveplot_test.py
 
 Several methods of plotting are supported, including cumulative, parametric, and 2D-Image.
+
+OS X Setup
+----------
+By default Macs restrict the size of shared memory that can be allocated to a
+single process. To overcome this, copy `sysctl.conf` to `/etc`, or append it if
+the file is already present.
+
+
 
 GUI Features
 ------------
