@@ -65,7 +65,7 @@ OS X Setup
 ----------
 By default Macs restrict the size of shared memory that can be allocated to a
 single process. To overcome this, copy `sysctl.conf` to `/etc`, or append it if
-the file is already present.
+the file is already present. Reboot your system to apply the changes.
 
 
 
