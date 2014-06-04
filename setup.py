@@ -7,6 +7,7 @@ args = dict(
     install_requires=["pyqtgraph>=0.9", "pyzmq>=14.0"],
     author="Philip Reinhold",
     author_email="pcreinhold@gmail.com",
+    description="System for minimal hassle, on-the-fly, dataset visualization",
     license="MIT",
     keywords="plot plotting graph graphing",
 )
