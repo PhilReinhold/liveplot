@@ -150,7 +150,10 @@ class MainWindow(QtGui.QMainWindow):
             if image is None:
                 image = np.array([arr])
             else:
-                image = np.vstack((image, [arr]))
+                try:
+                    image = np.vstack((image, [arr]))
+                except ValueError:
+                    image = np.array([arr])
             start_step = meta['start_step']
             if start_step is not None:
                 (x0, dx), (y0, dy) = start_step
