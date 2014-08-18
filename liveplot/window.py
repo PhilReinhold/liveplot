@@ -5,7 +5,7 @@ import signal
 import widgets
 import numpy as np
 from PyQt4.QtCore import QSharedMemory, QSize
-from PyQt4.QtGui import QMainWindow, QApplication, QStandardItem, QDockWidget, QStandardItemModel, QListView
+from PyQt4.QtGui import QMainWindow, QApplication, QStandardItem, QDockWidget, QStandardItemModel, QListView, QAction
 from PyQt4.QtNetwork import QLocalServer
 from PyQt4.Qt import Qt as QtConst
 from pyqtgraph.dockarea import DockArea
@@ -218,6 +218,10 @@ class NameList(QDockWidget):
         self.plot_dict = {}
 
         self.namelist_view.doubleClicked.connect(self.activate_item)
+        self.namelist_view.setContextMenuPolicy(QtConst.ActionsContextMenu)
+        delete_action = QAction("Delete Selected", self.namelist_view)
+        delete_action.triggered.connect(self.delete_item)
+        self.namelist_view.addAction(delete_action)
 
     def activate_item(self, index):
         item = self.namelist_model.itemFromIndex(index)
@@ -225,6 +229,11 @@ class NameList(QDockWidget):
         if plot.closed:
             plot.closed = False
             self.window.add_plot(plot)
+
+    def delete_item(self):
+        index = self.namelist_view.currentIndex()
+        item = self.namelist_model.itemFromIndex(index)
+        del self[str(item.text())]
 
     def __getitem__(self, item):
         return self.plot_dict[item]
