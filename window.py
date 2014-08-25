@@ -1,4 +1,5 @@
 import atexit
+import os
 import json
 import logging
 import signal
@@ -18,7 +19,6 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
         self.setWindowTitle("Liveplot")
-        # self.setWindowIcon(QIcon('C:\Phil\code\liveplot\icon.ico'))
         self.setWindowIcon(QIcon('icon.ico'))
         self.dockarea = DockArea()
         self.setCentralWidget(self.dockarea)
@@ -263,6 +263,11 @@ class NameList(QDockWidget):
 
 
 def main():
+    if os.name == 'nt':
+        import ctypes
+        myappid = 'philreinhold.liveplot'
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+
     app = QApplication([])
     win = MainWindow()
     win.show()
