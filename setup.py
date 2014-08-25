@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 args = dict(
     name="liveplot",
-    version="0.1",
+    version="0.1.1",
     packages=find_packages(),
     install_requires=["pyqtgraph>=0.9", "pyzmq>=14.0"],
     author="Philip Reinhold",
@@ -12,13 +12,19 @@ args = dict(
 )
 
 try:
-    import py2exe
+    import py2exe, os, zmq
+    os.environ["PATH"] += os.pathsep + os.path.split(zmq.__file__)[0]
     args.update(dict(
         windows=[{
-            "script":"liveplot\\__main__.py",
+            "script":"__main__.py",
             "icon_resources": [(1, "icon.ico")],
             "dest_base":"liveplot",
             }],
+        data_files=[
+            ('imageformats', [
+                r'C:\Python27\Lib\site-packages\PyQt4\plugins\imageformats\qico4.dll'
+            ]),
+            ('', ['C:\Phil\code\liveplot\icon.ico'])],
         options={
             "py2exe": {
                 "includes":[

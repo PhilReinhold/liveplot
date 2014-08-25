@@ -5,7 +5,8 @@ import signal
 import widgets
 import numpy as np
 from PyQt4.QtCore import QSharedMemory, QSize
-from PyQt4.QtGui import QMainWindow, QApplication, QStandardItem, QDockWidget, QStandardItemModel, QListView, QAction
+from PyQt4.QtGui import QMainWindow, QApplication, QStandardItem, QDockWidget, QStandardItemModel, QListView, QAction, \
+    QIcon
 from PyQt4.QtNetwork import QLocalServer
 from PyQt4.Qt import Qt as QtConst
 from pyqtgraph.dockarea import DockArea
@@ -17,6 +18,8 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
         self.setWindowTitle("Liveplot")
+        # self.setWindowIcon(QIcon('C:\Phil\code\liveplot\icon.ico'))
+        self.setWindowIcon(QIcon('icon.ico'))
         self.dockarea = DockArea()
         self.setCentralWidget(self.dockarea)
         self.namelist = NameList(self)
