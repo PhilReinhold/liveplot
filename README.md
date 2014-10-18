@@ -22,7 +22,6 @@ Requirements
 - Numpy
 - [PyQt4](http://www.riverbankcomputing.com/software/pyqt/download)
 - [pyqtgraph](http://www.pyqtgraph.org)
-- ~~[pyzmq](http://zeromq.github.io/pyzmq/index.html)~~
 
 pyqtgraph will be installed automatically from PyPI if not found
 
@@ -41,7 +40,11 @@ and start the window
 
     python -m liveplot
 
-~~On windows an executable for the window is available~~ TODO
+on windows, if you have py2exe, build the executable
+
+    python setup.py 
+    
+which should produce `dist/liveplot.exe`
 
 If the window has been successfully started, open a client and plot
 
@@ -80,11 +83,3 @@ In addition to the many wonderful features of native pyqtgraph widgets we have,
 - Right click on image plots
   - toggle histogram & levels scale
   - enable/disable auto-rescaling of levels when image is updated
-
-To Do
------
-- ~~Appending method for image plots~~
-- Record history with updating plot
-- ~~Context menu for toggling cross-hairs~~
-- Keep plots hidden while updating
-- Permanently delete plots
