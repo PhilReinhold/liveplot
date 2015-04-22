@@ -199,6 +199,9 @@ class MainWindow(QMainWindow):
             else:
                 pw.setImage(image)
 
+        elif operation == 'label':
+            pw.setTitle(meta['value'])
+
     def add_new_plot(self, rank, name):
         pw = widgets.get_widget(rank, name)
         self.add_plot(pw)

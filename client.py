@@ -142,6 +142,13 @@ class LivePlotClient(object):
             }
         self.send_to_plotter(meta, arr)
 
+    def label(self, name, text):
+        self.send_to_plotter({
+            'name': name,
+            'operation': 'label',
+            'value': text
+        })
+
     def clear(self, name=None):
         self.send_to_plotter({
             'name': name,

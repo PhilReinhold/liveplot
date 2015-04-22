@@ -66,6 +66,17 @@ def test_append_z():
         c.append_z('appending sinc', zs[:,i])
         yield
 
+def test_label():
+    c.clear('label test')
+    xs, ys = np.mgrid[-100:100, -100:100]/20.
+    rs = np.sqrt(xs**2 + ys**2)
+    zs = np.sinc(rs)
+    for i in range(200):
+        c.append_z('label test', zs[:,i])
+        c.label('label test', 'step: %d' % i)
+        yield
+
+
 class TestWindow(QWidget):
     def __init__(self):
         super(TestWindow, self).__init__()
@@ -93,6 +104,7 @@ class TestWindow(QWidget):
             'append y': test_append_y,
             'append xy': test_append_xy,
             'append z': test_append_z,
+            'label': test_label,
         }
         fn_text_widget = QPlainTextEdit()
         fn_text_widget.setMinimumWidth(500)

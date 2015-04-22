@@ -136,6 +136,9 @@ class CrosshairDock(CloseableDock):
         self.clear()
         self.plot(xs, ys)
 
+    def setTitle(self, text):
+        self.plot_widget.setTitle(text)
+
 class CrossSectionDock(CloseableDock):
     def __init__(self, trace_size=80, **kwargs):
         self.plot_item = view = pg.PlotItem(labels=kwargs.pop('labels', None))
@@ -208,6 +211,9 @@ class CrossSectionDock(CloseableDock):
         self.img_view.getView().vb.enableAutoRange(enable=autorange)
 
         self.update_cross_section()
+
+    def setTitle(self, text):
+        self.plot_item.setTitle(text)
 
     def redraw(self):
         self.setImage(self.img_view.imageItem.image)
