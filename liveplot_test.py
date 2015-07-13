@@ -138,7 +138,7 @@ class TestWindow(QWidget):
 
 if __name__ == "__main__":
     app = QApplication([])
-    c = LivePlotClient(size=2**28)
+    c = LivePlotClient(size=2**20)
     win = TestWindow()
     win.show()
     def clean():
