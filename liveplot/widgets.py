@@ -113,28 +113,39 @@ class CrosshairPlotWidget(pg.PlotWidget):
 class CrosshairDock(CloseableDock):
     def __init__(self, **kwargs):
         self.plot_widget = CrosshairPlotWidget()
+        self.plot_widget.addLegend()
         kwargs['widget'] = self.plot_widget
         super(CrosshairDock, self).__init__(**kwargs)
+        self.avail_colors = [(255,0,0), (0,0,255), (0,255,0), (255,255,255)]
+        self.used_colors = {}
+        self.curves = {}
 
     def plot(self, *args, **kwargs):
-        self.plot_widget.clear()
         self.plot_widget.parametric = kwargs.pop('parametric', False)
-        self.plot_widget.plot(*args, **kwargs)
+        name = kwargs.get('name', '')
+        if name in self.curves:
+            kwargs['pen'] = self.used_colors[name]
+            self.curves[name].setData(*args, **kwargs)
+        else:
+            kwargs['pen'] = self.used_colors[name] = self.avail_colors.pop()
+            self.curves[name] = self.plot_widget.plot(*args, **kwargs)
 
     def clear(self):
         self.plot_widget.clear()
 
-    def get_data(self):
-        items = self.plot_widget.plotItem.dataItems
-        if items:
-            return items[0].getData()
+    def get_data(self, label):
+        if label in self.curves:
+            return self.curves[label].getData()
         else:
             return [], []
 
     def redraw(self):
-        xs, ys = self.get_data()
+        xs_ys = []
+        for name in self.curves:
+            xs_ys.append((name,) + self.get_data(name))
         self.clear()
-        self.plot(xs, ys)
+        for name, xs, ys in xs_ys:
+            self.plot(xs, ys, name=name)
 
     def setTitle(self, text):
         self.plot_widget.setTitle(text)
@@ -238,7 +249,8 @@ class CrossSectionDock(CloseableDock):
     def set_histogram(self, visible):
         self.ui.histogram.setVisible(visible)
         self.ui.roiBtn.setVisible(visible)
-        self.ui.normBtn.setVisible(visible)
+        self.ui.normGroup.setVisible(visible)
+        self.ui.menuBtn.setVisible(visible)
 
     def add_cross_section(self):
         if self.imageItem.image is not None:

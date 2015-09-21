@@ -70,7 +70,7 @@ class LivePlotClient(object):
             region[:arrsize] = arrbytes
             self.shared_mem.unlock()
 
-    def plot_y(self, name, arr, extent=None, start_step=None):
+    def plot_y(self, name, arr, extent=None, start_step=(0, 1), label=''):
         arr = np.array(arr)
         if extent is not None and start_step is not None:
             raise ValueError('extent and start_step provide the same info and are thus mutually exclusive')
@@ -83,6 +83,7 @@ class LivePlotClient(object):
             'operation':'plot_y',
             'start_step': start_step,
             'rank': 1,
+            'label': label,
         }
         self.send_to_plotter(meta, arr)
 
@@ -106,30 +107,33 @@ class LivePlotClient(object):
         }
         self.send_to_plotter(meta, arr)
 
-    def plot_xy(self, name, xs, ys):
+    def plot_xy(self, name, xs, ys, label=''):
         arr = np.array([xs, ys])
         meta = {
             'name': name,
             'operation':'plot_xy',
             'rank': 1,
+            'label': label,
         }
         self.send_to_plotter(meta, np.array([xs, ys]))
 
-    def append_y(self, name, point, start_step=None):
+    def append_y(self, name, point, start_step=(0, 1), label=''):
         self.send_to_plotter({
             'name': name,
             'operation': 'append_y',
             'value': point,
             'start_step': start_step,
             'rank': 1,
+            'label': label,
         })
 
-    def append_xy(self, name, x, y):
+    def append_xy(self, name, x, y, label=''):
         self.send_to_plotter({
             'name': name,
             'operation': 'append_xy',
             'value': (x, y),
             'rank': 1,
+            'label': label,
         })
 
     def append_z(self, name, arr, start_step=None):

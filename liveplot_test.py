@@ -10,21 +10,26 @@ from liveplot import LivePlotClient
 def test_plot_y():
     for i in range(100):
         xs = np.linspace(0, 10, 100) + i / 2.
-        arr = np.sin(xs)
-        c.plot_y('scrolling sine', arr, start_step=(xs[0], xs[1]-xs[0]))
+        s_arr = np.sin(xs)
+        c_arr = np.cos(xs)
+        c.plot_y('scrolling sine', s_arr, start_step=(xs[0], xs[1]-xs[0]), label='sin')
+        c.plot_y('scrolling sine', c_arr, start_step=(xs[0], xs[1]-xs[0]), label='cos')
         yield
 
 def test_plot_xy():
     xs = np.linspace(-1, 1, 100)
     for mu in xs:
-        ys = np.exp((-(xs - mu)**2)/.1)
-        c.plot_xy('travelling packet', xs, ys)
+        ys_r = np.exp((-(xs - mu)**2)/.1)
+        ys_l = np.exp((-(xs + mu)**2)/.1)
+        c.plot_xy('travelling packet', xs, ys_r, label='right')
+        c.plot_xy('travelling packet', xs, ys_l, label='left')
         yield
 
 def test_append_y():
     xs = np.linspace(0, 6, 100)
     for val in np.exp(xs):
-        c.append_y('appending exp', val, start_step=(xs[0], xs[1]-xs[0]))
+        c.append_y('appending exp', val, start_step=(xs[0], xs[1]-xs[0]), label='up')
+        c.append_y('appending exp', -val, start_step=(xs[0], xs[1]-xs[0]), label='down')
         yield
 
 def test_plot_xy_parametric():
@@ -32,7 +37,8 @@ def test_plot_xy_parametric():
         ts = np.linspace(0, 20, 300) + i/20.
         xs = ts**2 * np.sin(ts)
         ys = ts**2 * np.cos(ts)
-        c.plot_xy('rotating spiral', xs, ys)
+        c.plot_xy('rotating spiral', xs, ys, label='a')
+        c.plot_xy('rotating spiral', ys, xs, label='b')
         yield
 
 def test_append_xy():
@@ -41,7 +47,8 @@ def test_append_xy():
     xs = ts**2 * np.sin(ts)
     ys = ts**2 * np.cos(ts)
     for x, y in zip(xs, ys):
-        c.append_xy('spiral out', x, y)
+        c.append_xy('spiral out', x, y, label='a')
+        c.append_xy('spiral out', y, x, label='b')
         yield
 
 def test_plot_z():

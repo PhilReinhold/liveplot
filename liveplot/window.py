@@ -146,15 +146,17 @@ class MainWindow(QMainWindow):
 
         elif operation == 'plot_y':
             start_step = meta['start_step']
+            label = meta['label']
             if start_step is not None:
                 x0, dx = start_step
                 nx = len(arr)
                 xs = np.linspace(x0, x0 + (nx - 1)*dx, nx)
-                pw.plot(xs, arr)
+                pw.plot(xs, arr, name=label)
             else:
-                pw.plot(arr)
+                pw.plot(arr, name=label)
         elif operation == 'plot_xy':
-            pw.plot(arr[0], arr[1], parametric=True)
+            label = meta['label']
+            pw.plot(arr[0], arr[1], parametric=True, name=label)
         elif operation == 'plot_z':
             start_step = meta['start_step']
             if start_step is not None:
@@ -163,7 +165,8 @@ class MainWindow(QMainWindow):
             else:
                 pw.setImage(arr)
         elif operation == 'append_y':
-            xs, ys = pw.get_data()
+            label = meta['label']
+            xs, ys = pw.get_data(label)
             new_ys = list(ys)
             new_ys.append(meta['value'])
             start_step = meta['start_step']
@@ -171,17 +174,18 @@ class MainWindow(QMainWindow):
                 x0, dx = start_step
                 nx = len(new_ys)
                 xs = np.linspace(x0, x0 + (nx - 1)*dx, nx)
-                pw.plot(xs, new_ys)
+                pw.plot(xs, new_ys, name=label)
             else:
-                pw.plot(new_ys)
+                pw.plot(new_ys, name=label)
         elif operation == 'append_xy':
-            xs, ys = pw.get_data()
+            label = meta['label']
+            xs, ys = pw.get_data(label)
             xn, yn = meta['value']
             new_xs = list(xs)
             new_xs.append(xn)
             new_ys = list(ys)
             new_ys.append(yn)
-            pw.plot(new_xs, new_ys, parametric=True)
+            pw.plot(new_xs, new_ys, parametric=True, name=label)
 
         elif operation == 'append_z':
             image = pw.get_data()
